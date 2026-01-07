@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2025 Valeri Gokadze
+ *     Copyright (C) 2026 Valeri Gokadze
  *
  *     Musify is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -531,7 +531,7 @@ class SettingsPage extends StatelessWidget {
       ListView.builder(
         shrinkWrap: true,
         physics: const BouncingScrollPhysics(),
-        padding: commonListViewBottmomPadding,
+        padding: commonListViewBottomPadding,
         itemCount: availableModes.length,
         itemBuilder: (context, index) {
           final mode = availableModes[index];
@@ -578,7 +578,7 @@ class SettingsPage extends StatelessWidget {
       ListView.builder(
         shrinkWrap: true,
         physics: const BouncingScrollPhysics(),
-        padding: commonListViewBottmomPadding,
+        padding: commonListViewBottomPadding,
         itemCount: availableLanguages.length,
         itemBuilder: (context, index) {
           final language = availableLanguages[index];
@@ -625,7 +625,7 @@ class SettingsPage extends StatelessWidget {
       ListView.builder(
         shrinkWrap: true,
         physics: const BouncingScrollPhysics(),
-        padding: commonListViewBottmomPadding,
+        padding: commonListViewBottomPadding,
         itemCount: availableQualities.length,
         itemBuilder: (context, index) {
           final quality = availableQualities[index];

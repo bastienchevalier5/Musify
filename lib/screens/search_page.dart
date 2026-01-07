@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2025 Valeri Gokadze
+ *     Copyright (C) 2026 Valeri Gokadze
  *
  *     Musify is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@ class _SearchPageState extends State<SearchPage> {
   void dispose() {
     _searchBar.dispose();
     _inputNode.dispose();
+    _fetchingSongs.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -136,8 +137,12 @@ class _SearchPageState extends State<SearchPage> {
                         const Duration(milliseconds: 300),
                         () async {
                           if (value.isNotEmpty) {
-                            final s = await getSearchSuggestions(value);
-                            _suggestionsList = List<String>.from(s);
+                            final searchSuggestions =
+                                await getSearchSuggestions(value);
+
+                            _suggestionsList = List<String>.from(
+                              searchSuggestions,
+                            );
                           } else {
                             _suggestionsList = [];
                           }
@@ -314,7 +319,7 @@ class _SearchPageState extends State<SearchPage> {
 
         widgets.add(
           Padding(
-            padding: isLast ? commonListViewBottmomPadding : EdgeInsets.zero,
+            padding: isLast ? commonListViewBottomPadding : EdgeInsets.zero,
             child: PlaylistBar(
               key: ValueKey('playlist_${playlist['ytid']}_$index'),
               playlist['title'],

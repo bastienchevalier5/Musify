@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2025 Valeri Gokadze
+ *     Copyright (C) 2026 Valeri Gokadze
  *
  *     Musify is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import 'package:musify/services/settings_manager.dart';
 import 'package:musify/utilities/flutter_toast.dart';
 import 'package:musify/utilities/utils.dart';
 import 'package:musify/widgets/playlist_cube.dart';
+import 'package:musify/widgets/playlist_header.dart';
 import 'package:musify/widgets/song_bar.dart';
 import 'package:musify/widgets/sort_chips.dart';
 
@@ -45,7 +46,15 @@ class UserSongsPage extends StatefulWidget {
 
 class _UserSongsPageState extends State<UserSongsPage> {
   bool _isEditEnabled = false;
-  late List<dynamic> _originalOfflineSongsList = [];
+  List<dynamic> _originalOfflineSongsList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.page == 'offline') {
+      _originalOfflineSongsList = List<dynamic>.from(userOfflineSongs);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +64,6 @@ class _UserSongsPageState extends State<UserSongsPage> {
     final length = getLength(widget.page);
     final isLikedSongs = title == context.l10n!.likedSongs;
     final isOfflineSongs = title == context.l10n!.offlineSongs;
-
-    // Initialize backup for offline songs on first open
-    if (isOfflineSongs && _originalOfflineSongsList.isEmpty) {
-      _originalOfflineSongsList = List<dynamic>.from(userOfflineSongs);
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -162,64 +166,39 @@ class _UserSongsPageState extends State<UserSongsPage> {
     int songsLength,
     bool isOfflineSongs,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final primaryColor = colorScheme.primary;
+    final primaryColor = Theme.of(context).colorScheme.primary;
     final isRecentlyPlayed = title == context.l10n!.recentlyPlayed;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-      child: Column(
-        children: [
-          _buildPlaylistImage(title, icon),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$songsLength ${context.l10n!.songs}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (songsLength > 0) _buildPlayButton(primaryColor, title),
-              if (isRecentlyPlayed && songsLength > 0)
-                _buildClearRecentsButton(primaryColor),
-            ],
-          ),
-          if (isOfflineSongs && songsLength > 1) ...[
-            const SizedBox(height: 16),
-            SortChips<OfflineSortType>(
-              currentSortType: _getCurrentOfflineSortType(),
-              sortTypes: OfflineSortType.values,
-              sortTypeToString: _getSortTypeDisplayText,
-              onSelected: (type) {
-                setState(() {
-                  addOrUpdateData('settings', 'offlineSortType', type.name);
-                  offlineSortSetting = type.name;
-                });
-                _sortOfflineSongs(type);
-              },
-            ),
+    return Column(
+      children: [
+        PlaylistHeader(_buildPlaylistImage(title, icon), title, songsLength),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (songsLength > 0) _buildPlayButton(primaryColor, title),
+            if (isRecentlyPlayed && songsLength > 0)
+              _buildClearRecentsButton(primaryColor),
           ],
-          const SizedBox(height: 8),
+        ),
+        if (isOfflineSongs && songsLength > 1) ...[
+          const SizedBox(height: 16),
+          SortChips<OfflineSortType>(
+            currentSortType: _getCurrentOfflineSortType(),
+            sortTypes: OfflineSortType.values,
+            sortTypeToString: _getSortTypeDisplayText,
+            onSelected: (type) {
+              setState(() {
+                addOrUpdateData('settings', 'offlineSortType', type.name);
+                offlineSortSetting = type.name;
+              });
+              _sortOfflineSongs(type);
+            },
+          ),
         ],
-      ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -349,7 +328,7 @@ class _UserSongsPageState extends State<UserSongsPage> {
 
               return ReorderableDragStartListener(
                 enabled: _isEditEnabled,
-                key: Key(song['ytid'].toString()),
+                key: ValueKey('${song['ytid']}_$index'),
                 index: index,
                 child: _buildSongBar(
                   song,
@@ -378,7 +357,7 @@ class _UserSongsPageState extends State<UserSongsPage> {
               final borderRadius = getItemBorderRadius(index, songsList.length);
 
               return RepaintBoundary(
-                key: ValueKey('song_${song['ytid']}'),
+                key: ValueKey('song_${song['ytid']}_$index'),
                 child: _buildSongBar(
                   song,
                   index,
@@ -405,14 +384,21 @@ class _UserSongsPageState extends State<UserSongsPage> {
     final isLikedSongs = playlist['title'] == context.l10n!.likedSongs;
 
     return SongBar(
-      key: Key(song['ytid'].toString()),
+      key: ValueKey('${song['ytid']}_$index'),
       song,
       true,
       onPlay: () {
-        audioHandler.playPlaylistSong(
-          playlist: audioHandler.queue != playlist['list'] ? playlist : null,
-          songIndex: index,
-        );
+        final currentQueue = audioHandler.currentQueue;
+        final isSameQueue =
+            currentQueue.length == playlist['list'].length &&
+            index < currentQueue.length &&
+            currentQueue[index] == song;
+
+        if (isSameQueue) {
+          audioHandler.skipToSong(index);
+        } else {
+          audioHandler.playPlaylistSong(playlist: playlist, songIndex: index);
+        }
       },
       borderRadius: borderRadius,
       isRecentSong: isRecentSong,

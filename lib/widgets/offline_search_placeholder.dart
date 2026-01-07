@@ -20,40 +20,37 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:musify/widgets/marque.dart';
+import 'package:musify/extensions/l10n.dart';
 
-class SectionTitle extends StatelessWidget {
-  const SectionTitle(this.title, this.primaryColor, {super.key, this.icon});
-  final Color primaryColor;
-  final String title;
-  final IconData? icon;
+class OfflineSearchPlaceholder extends StatelessWidget {
+  const OfflineSearchPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 20, color: colorScheme.primary),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            child: MarqueeWidget(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: colorScheme.secondary,
-                  fontSize:
-                      Theme.of(context).textTheme.titleMedium?.fontSize ?? 16,
-                  fontWeight: FontWeight.w600,
-                ),
+    return Scaffold(
+      appBar: AppBar(title: Text(context.l10n!.search)),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: 64,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.l10n!.error,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

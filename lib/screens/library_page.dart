@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2025 Valeri Gokadze
+ *     Copyright (C) 2026 Valeri Gokadze
  *
  *     Musify is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import 'package:musify/extensions/l10n.dart';
 import 'package:musify/services/playlist_download_service.dart';
 import 'package:musify/services/router_service.dart';
 import 'package:musify/services/settings_manager.dart';
+import 'package:musify/utilities/async_loader.dart';
 import 'package:musify/utilities/common_variables.dart';
 import 'package:musify/utilities/flutter_toast.dart';
 import 'package:musify/utilities/playlist_image_picker.dart';
@@ -45,6 +46,62 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+
+    // Show offline mode message if there is no content
+    if (offlineMode.value) {
+      final hasUserContent =
+          userPlaylistFolders.value.isNotEmpty ||
+          userPlaylists.value.isNotEmpty ||
+          userCustomPlaylists.value.isNotEmpty;
+      final hasOfflinePlaylists =
+          offlinePlaylistService.offlinePlaylists.value.isNotEmpty;
+
+      if (!hasUserContent && !hasOfflinePlaylists) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Scaffold(
+          appBar: AppBar(title: Text(context.l10n!.library)),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      FluentIcons.cloud_off_24_filled,
+                      size: 40,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.l10n!.offlinePlaylists,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.l10n!.noOfflineLibraryContent,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n!.library)),
@@ -173,32 +230,20 @@ class _LibraryPageState extends State<LibraryPage> {
                       ),
                     ),
                   ),
-                  FutureBuilder(
+                  AsyncLoader<List<dynamic>>(
                     future: getUserPlaylistsNotInFolders(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      } else if (snapshot.hasData &&
-                          snapshot.data!.isNotEmpty) {
-                        return _buildPlaylistListView(context, snapshot.data!);
-                      } else {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text(
-                            context.l10n!.noPlaylistsAdded,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                      }
-                    },
+                    emptyWidget: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        context.l10n!.noPlaylistsAdded,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
+                    builder: _buildPlaylistListView,
                   ),
                 ],
               );
@@ -261,7 +306,7 @@ class _LibraryPageState extends State<LibraryPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: playlists.length,
-      padding: commonListViewBottmomPadding,
+      padding: commonListViewBottomPadding,
       itemBuilder: (BuildContext context, index) {
         final playlist = playlists[index];
         final borderRadius = getItemBorderRadius(index, playlists.length);
