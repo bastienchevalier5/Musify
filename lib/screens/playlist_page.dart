@@ -253,6 +253,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
             runSpacing: 8,
             children: [
               if (songsLength > 0) _buildPlayButton(primaryColor),
+              if (songsLength > 0) _buildShuffleButton(primaryColor),
               if (widget.playlistId != null && !isUserCreated)
                 _buildLikeButton(primaryColor),
               _buildSyncButton(primaryColor),
@@ -295,6 +296,33 @@ class _PlaylistPageState extends State<PlaylistPage> {
       iconSize: 24,
       onPressed: () =>
           audioHandler.playPlaylistSong(playlist: _playlist, songIndex: 0),
+    );
+  }
+
+  // Ajoutez cette méthode dans votre classe _PlaylistPageState
+
+  Widget _buildShuffleButton(Color primaryColor) {
+    return IconButton.filled(
+      icon: Icon(
+        FluentIcons.arrow_shuffle_24_filled,
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
+      iconSize: 24,
+      onPressed: () async {
+        // On clone la playlist
+        final shuffledPlaylist = Map<String, dynamic>.from(_playlist);
+        final List<dynamic> cloned = List<dynamic>.from(_playlist['list']);
+
+        // On mélange réellement la liste
+        cloned.shuffle(Random());
+        shuffledPlaylist['list'] = cloned;
+
+        // On joue le premier élément de la liste mélangée
+        await audioHandler.playPlaylistSong(
+          playlist: shuffledPlaylist,
+          songIndex: 0,
+        );
+      },
     );
   }
 
