@@ -28,12 +28,15 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:musify/API/musify.dart';
 import 'package:musify/extensions/l10n.dart';
 import 'package:musify/main.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:musify/services/data_manager.dart';
 import 'package:musify/services/playlist_download_service.dart';
 import 'package:musify/services/playlist_sharing.dart';
 import 'package:musify/services/settings_manager.dart';
 import 'package:musify/utilities/common_variables.dart';
 import 'package:musify/utilities/flutter_toast.dart';
+import 'package:musify/utilities/mediaitem.dart';
+import 'package:musify/utilities/playlist_image_picker.dart';
 import 'package:musify/utilities/sort_utils.dart';
 import 'package:musify/utilities/utils.dart';
 import 'package:musify/widgets/edit_playlist_dialog.dart';
@@ -223,24 +226,46 @@ class _PlaylistPageState extends State<PlaylistPage> {
     final colorScheme = theme.colorScheme;
     final primaryColor = colorScheme.primary;
 
-    return Column(
-      children: [
-        PlaylistHeader(_buildPlaylistImage(), _playlist['title'], songsLength),
-        const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            if (songsLength > 0) _buildPlayButton(primaryColor),
-            if (songsLength > 0) _buildShuffleButton(primaryColor),
-            if (widget.playlistId != null && !isUserCreated)
-              _buildLikeButton(primaryColor),
-            _buildSyncButton(primaryColor),
-            _buildDownloadButton(),
-            if (isUserCreated) ...[
-              _buildShareButton(primaryColor),
-              _buildEditButton(primaryColor),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: Column(
+        children: [
+          _buildPlaylistImage(),
+          const SizedBox(height: 20),
+          Text(
+            _playlist['title'],
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$songsLength ${context.l10n!.songs}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (songsLength > 0) _buildPlayButton(primaryColor),
+              if (songsLength > 0) _buildShuffleButton(primaryColor),
+              if (widget.playlistId != null && !isUserCreated)
+                _buildLikeButton(primaryColor),
+              _buildSyncButton(primaryColor),
+              _buildDownloadButton(),
+              if (isUserCreated) ...[
+                _buildShareButton(primaryColor),
+                _buildEditButton(primaryColor),
+              ],
             ],
           ],
         ),
@@ -278,8 +303,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
     );
   }
 
-  // Ajoutez cette méthode dans votre classe _PlaylistPageState
-
+  // Ajoutez cette nouvelle fonction dans votre classe _PlaylistPageState
   Widget _buildShuffleButton(Color primaryColor) {
     return IconButton.filled(
       icon: Icon(
@@ -304,6 +328,9 @@ class _PlaylistPageState extends State<PlaylistPage> {
       },
     );
   }
+
+
+
 
   Widget _buildShareButton(Color primaryColor) {
     return IconButton.filledTonal(
